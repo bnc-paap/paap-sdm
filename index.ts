@@ -1,53 +1,99 @@
-/*
- * Copyright © 2018 Atomist, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-import { Configuration } from "@atomist/automation-client";
+import { GitProject } from "@atomist/automation-client";
+import { CommandHandlerRegistration, hasFile } from "@atomist/sdm";
 import {
-    ConfigureOptions,
-    configureSdm,
+    configure,
+    container, ContainerRegistration,
 } from "@atomist/sdm-core";
-import { machine } from "./lib/machine/machine";
+import * as os from "os";
+import * as path from "path";
 
-const machineOptions: ConfigureOptions = {
-    /**
-     * When your SDM requires configuration that is unique to it,
-     * you can list it here.
-     */
-    requiredConfigurationValues: [
-    ],
-};
+export const configuration = configure(async sdm => {
+    sdm.addCommand(helloWorldCommand);
+    return {
+        node: {
+            test: hasFile("package.json"),
+            goals: [
+                container(
+                    `node`,
+                    {
+                        containers: [{
+                            args: ["sh", "-c", "npm install && npm test"],
+                            env: [{ name: "NODE_ENV", value: "development" }],
+                            image: `node:10.16.0`,
+                            name: "npm",
+                        }],
+                    },
+                ),
+            ],
+        },
+        maven: {
+            test: hasFile("pom.xml"),
+            goals: [
+                container(
+                    `mvn8`,
+                    {
+                        containers: [{
+                            args: ["mvn", "package"],
+                            image: `maven:3.6.1-jdk-8`,
+                            name: "maven",
+                        }],
+                        output: [{
+                            classifier: "target",
+                            pattern: { directory: "target" },
+                        }],
+                    },
+                ),
+            ],
+        },
+        debugStep: {
+            dependsOn: ["maven"],
+            goals: [
+                container(
+                    `debugStep`,
+                    {
+                        containers: [{
+                            args: ["ls", "-la"],
+                            image: `ubuntu:18.04`,
+                            name: "ubuntu",
+                        }],
+                        input: ["target"],
+                    },
+                ),
+            ],
+        },
+        docker: {
+            dependsOn: ["debugStep"],
+            test: hasFile("Dockerfile"),
+            goals: [
+                container("docker", {
+                    callback: async (r, p) => {
+                        const safeOwner = p.id.owner.replace(/[^a-z0-9]+/g, "");
+                        r.containers[0].args.push(`--destination=${safeOwner}/${p.id.repo}:${p.id.sha}`);
+                        return r;
+                    },
+                    containers: [{
+                        args: [
+                            "--context=dir://atm/home",
+                            "--dockerfile=Dockerfile",
+                            "--no-push",
+                            "--single-snapshot",
+                        ],
+                        image: "gcr.io/kaniko-project/executor:v0.10.0",
+                        name: "kaniko",
+                    }],
+                    input: ["target"],
+                }),
+            ],
+        },
+    };
+});
 
-/**
- * The starting point for building an SDM is here!
- */
-export const configuration: Configuration = {
-    /**
-     * To run in team mode, you'll need an Atomist workspace.
-     * To run in local mode, you don't. This will be ignored.
-     * See: https://docs.atomist.com/developer/architecture/#connect-your-sdm
-     */
-    workspaceIds: ["connect this SDM to your whole team with the Atomist service"],
-    postProcessors: [
-        /**
-         * This is important setup! This defines the function that will be called
-         * to configure your SDM with everything that you want it to do.
-         *
-         * Click into the first argument (the "machine" function) to personalize
-         * your SDM.
-         */
-        configureSdm(machine, machineOptions),
-    ],
+export const helloWorldCommand: CommandHandlerRegistration = {
+    name: "HelloWorld",
+    description: "Responds with a friendly greeting to everyone",
+    intent: "hello",
+    listener: async ci => {
+        await ci.addressChannels("Hello, world");
+        return {code: 0};
+    },
 };

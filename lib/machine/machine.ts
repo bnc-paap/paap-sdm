@@ -1,19 +1,3 @@
-/*
- * Copyright © 2018 Atomist, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 import { DefaultHttpClientFactory, NoParameters, Project } from "@atomist/automation-client";
 import {
     Autofix, AutofixRegistration, CodeTransform,
@@ -22,12 +6,13 @@ import {
     SoftwareDeliveryMachineConfiguration, whenPushSatisfies,
 } from "@atomist/sdm";
 import {
+    Container,
     createSoftwareDeliveryMachine,
 } from "@atomist/sdm-core";
 import { Build } from "@atomist/sdm-pack-build";
-import { DockerBuild } from "@atomist/sdm-pack-docker";
+import { DockerBuild, HasDockerfile } from "@atomist/sdm-pack-docker";
 import { codeMetrics } from "@atomist/sdm-pack-sloc";
-import { mavenBuilder, mavenPackage } from "@atomist/sdm-pack-spring";
+import { IsMaven, mavenBuilder, mavenPackage } from "@atomist/sdm-pack-spring";
 
 /**
  * Initialize an sdm definition, and add functionality to it.
@@ -49,17 +34,19 @@ export function machine(
 
     sdm.addCommand(helloWorldCommand);
 
-    sdm.withPushRules(
-        onAnyPush().setGoals(autofixGoal),
-        whenPushSatisfies(IsMaven).setGoals(mavenBuildGoals),
-        // whenPushSatisfies(HasDockerfile).setGoals(dockerBuild),
-    );
+    const mvnBuildJdk8 = new Container({ displayName: "Maven JDK8"})
+        .with({
+            containers: [{
+                name: "mvn",
+                image: "maven:3.6.1-jdk-8",
+                command: ["mvn"],
+                args: ["clean", "test", "-B", "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"],
+            }],
+        });
 
-    /*
-     * this is a good place to type
-    sdm.
-     * and see what the IDE suggests for after the dot
-     */
+    sdm.withPushRules(
+        onAnyPush().setGoals(mvnBuildJdk8),
+    );
 
     return sdm;
 }
@@ -70,29 +57,24 @@ export const helloWorldCommand: CommandHandlerRegistration = {
     intent: "hello",
     listener: async ci => {
         await ci.addressChannels("Hello, world");
-        return { code: 0 };
+        return {code: 0};
     },
 };
 
-const dockerBuild = new DockerBuild().with({
-    options: { push: false },
-})
-
-export const HasDockerfile: PredicatePushTest = predicatePushTest(
-    "Has Dockerfile",
-    p => p.hasFile("Dockerfile"));
-
-export const IsMaven: PredicatePushTest = predicatePushTest(
-    "Is Maven",
-    p => p.hasFile("pom.xml"));
-
-const mavenBuild = new Build({ displayName: "maven build" }).with({
-    name: "maven",
-    builder: mavenBuilder(),
-});
-
-const mavenBuildGoals = goals("build")
-    .plan(mavenBuild);
+// const dockerBuild = new DockerBuild().with({
+//     options: {push: false},
+// });
+//
+// const dockerBuildGoals = goals("docker build")
+//     .plan(dockerBuild);
+//
+// const mavenBuild = new Build({displayName: "maven build", isolate: true}).with({
+//     name: "maven",
+//     builder: mavenBuilder(),
+// });
+//
+// const mavenBuildGoals = goals("build")
+//     .plan(mavenBuild);
 
 export const AddApacheLicenseFileTransform: CodeTransform<NoParameters> = async (p: Project) => {
 
