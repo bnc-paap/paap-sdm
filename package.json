@@ -30,16 +30,20 @@
     "@atomist/sdm-pack-build": "^1.0.0-RC.2",
     "@atomist/sdm-pack-docker": "^2.0.0-master.20190627102600",
     "@atomist/sdm-pack-fingerprints": "^3.1.5-master.20190708091203",
-    "@atomist/sdm-pack-jenkins": "0.1.0-master.20190709172205",
+    "@atomist/sdm-pack-jenkins": "0.1.0-master.20190726152626",
     "@atomist/sdm-pack-sloc": "^1.0.0-RC.2",
+    "@atomist/sdm-pack-sonarqube": "^1.0.2-master.20190709172442",
     "@atomist/sdm-pack-spring": "^2.0.0-master.20190703144623",
     "fs-extra": "^8.1.0",
-    "handlebars": "^4.1.2"
+    "handlebars": "^4.1.2",
+    "lodash": "^4.17.15",
+    "xml2js": "^0.4.19"
   },
   "devDependencies": {
     "@atomist/sdm-local": "^1.0.9-master.20190604162557",
     "@types/mocha": "^5.2.5",
     "@types/power-assert": "^1.5.0",
+    "@types/xml2js": "^0.4.4",
     "espower-typescript": "^9.0.0",
     "mocha": "^5.2.0",
     "npm-run-all": "^4.1.5",
