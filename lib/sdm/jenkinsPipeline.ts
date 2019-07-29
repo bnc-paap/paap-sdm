@@ -1,7 +1,7 @@
 import {
     GoalInvocation,
     hasFile,
-    isMaterialChange,
+    isMaterialChange, onAnyPush, PushImpact, PushImpactListener, SdmContext, slackWarningMessage,
 } from "@atomist/sdm";
 import { configure } from "@atomist/sdm-core";
 import {
@@ -12,7 +12,11 @@ import { sonarQubeSupport, SonarScan } from "@atomist/sdm-pack-sonarqube";
 import * as fs from "fs-extra";
 import * as hbx from "handlebars";
 import * as path from "path";
-import { SpringBootGenerator } from "./springBootGenerator";
+import { SecretSnifferGoal, SonarScanGoal } from "../machine/goals";
+import { ExposedSecret, SecretSnifferOptions, sniffProjectSecrets } from "../machine/secretSniffer";
+import { loadSecretSnifferOptions } from "../machine/secretSnifferOptionsLoader";
+
+import { SpringBootGenerator } from "../command/springBootGenerator";
 
 /**
  * Atomist SDM Sample
@@ -54,7 +58,6 @@ const javaFiles = [
  */
 export const jenkinsPipelineSdm = configure(async sdm => {
     // Extension packs
-    const SonarScanGoal = new SonarScan();
     sdm.addExtensionPacks(sonarQubeSupport(SonarScanGoal));
 
     // Generators
@@ -73,11 +76,10 @@ export const jenkinsPipelineSdm = configure(async sdm => {
     // Jenkins goal that runs a job named <repo_name>-build which will be
     // created or updated with a job definition returned by the mavenPipeline
     // function
-    const build = jenkins("build", {
+    const JenkinsBuild = jenkins("build", {
         ...options,
-        job: async gi => `${gi.goalEvent.repo.owner}_${gi.goalEvent.repo.name}-build-pipeline-test`,
-        // job: async gi => `7807/nonproduction/${gi.goalEvent.repo.owner}_${gi.goalEvent.repo.name}-build`,
-        definition: async gi => mavenPipeline(gi),
+        job: async gi => `7807/nonproduction/${gi.goalEvent.repo.owner}_${gi.goalEvent.repo.name}-build`,
+        definition: async gi => jenkinsPipeline(gi),
     });
 
     return {
@@ -97,17 +99,15 @@ export const jenkinsPipelineSdm = configure(async sdm => {
                     ],
                 })],
             goals: [
+                SecretSnifferGoal,
                 SonarScanGoal,
-                build,
+                JenkinsBuild,
             ],
         },
     };
 }, {name: "jenkins"});
 
-/**
- * Load the job definition from a local XML template
- */
-async function mavenPipeline(gi: GoalInvocation): Promise<string> {
+async function jenkinsPipeline(gi: GoalInvocation): Promise<string> {
     const template = (await fs.readFile(path.join(__dirname, "jenkins.pipeline.xml"))).toString();
     const hb = hbx.compile(template);
     return hb({gi});

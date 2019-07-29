@@ -37,13 +37,15 @@
     "fs-extra": "^8.1.0",
     "handlebars": "^4.1.2",
     "lodash": "^4.17.15",
-    "xml2js": "^0.4.19"
+    "xml2js": "^0.4.19",
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "@atomist/sdm-local": "^1.0.9-master.20190604162557",
     "@types/mocha": "^5.2.5",
     "@types/power-assert": "^1.5.0",
     "@types/xml2js": "^0.4.4",
+    "@types/yamljs": "^0.2.30",
     "espower-typescript": "^9.0.0",
     "mocha": "^5.2.0",
     "npm-run-all": "^4.1.5",

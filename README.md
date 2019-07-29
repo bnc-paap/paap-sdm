@@ -1,22 +1,25 @@
-<p align="center">
-  <img src="https://images.atomist.com/sdm/SDM-Logo-Dark.png">
-</p>
+# PAAP-SDM
+## Development
+### Tools
+Third party tools can be run locally with Docker for development.
 
-# @atomist-seeds/empty-sdm
+#### Jenkins
+```bash
+docker run -itd -e JENKINS_USER=$(id -u) \                           ✔  4264  08:52:16
+-v /var/run/docker.sock:/var/run/docker.sock \
+-v $(pwd)/jenkins_home:/var/jenkins_home \
+-v $(which docker):/usr/bin/docker \
+-p 8880:8080 -p 50000:50000  \
+-u root \
+schogini/jenkinsci-docker-compose:v1
+```
 
-[![atomist sdm goals](http://badge.atomist.com/T29E48P34/atomist-seeds/empty-sdm/c796f715-67c3-48ae-8b7c-45c0fd31443f)](https://app.atomist.com/workspace/T29E48P34)
-[![npm version](https://img.shields.io/npm/v/@atomist-seeds/empty-sdm.svg)](https://www.npmjs.com/package/@atomist-seeds/empty-sdm)
+*If first execution, make sure to update the Jenkins to the latest version*
 
-The simplest possible [Atomist][atomist] software delivery machine
-(SDM).
-
-Software delivery machines enable you to control your delivery process
-in code.  Think of it as an API for your software delivery.  See the
-[Atomist documentation][atomist-doc] for more information on the
-concept of a software delivery machine and how to create and develop
-an SDM.
-
-[atomist-doc]: https://docs.atomist.com/ (Atomist Documentation)
+#### Sonar
+```bash
+docker run -d --name sonarqube -p 9000:9000 -p 9092:9092 sonarqube
+```
 
 ## Getting started
 
@@ -25,33 +28,12 @@ creating an SDM.
 
 [atomist-quick]: https://docs.atomist.com/quick-start/ (Atomist - Developer Quick Start)
 
-## Contributing
-
-Contributions to this project from community members are encouraged
-and appreciated. Please review the [Contributing
-Guidelines](CONTRIBUTING.md) for more information. Also see the
-[Development](#development) section in this document.
-
-## Code of conduct
-
-This project is governed by the [Code of
-Conduct](CODE_OF_CONDUCT.md). You are expected to act in accordance
-with this code by participating. Please report any unacceptable
-behavior to code-of-conduct@atomist.com.
-
 ## Documentation
 
 Please see [docs.atomist.com][atomist-doc] for
 [developer][atomist-doc-sdm] documentation.
 
 [atomist-doc-sdm]: https://docs.atomist.com/developer/sdm/ (Atomist Documentation - SDM Developer)
-
-## Connect
-
-Follow [@atomist][atomist-twitter] and [the Atomist blog][atomist-blog].
-
-[atomist-twitter]: https://twitter.com/atomist (Atomist on Twitter)
-[atomist-blog]: https://blog.atomist.com/ (The Official Atomist Blog)
 
 ## Support
 
