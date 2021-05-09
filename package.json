@@ -36,7 +36,7 @@
     "@atomist/sdm-pack-spring": "^2.0.0-master.20190703144623",
     "fs-extra": "^8.1.0",
     "handlebars": "^4.1.2",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.21",
     "xml2js": "^0.4.19",
     "yamljs": "^0.3.0"
   },
